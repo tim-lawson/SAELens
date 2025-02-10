@@ -16,6 +16,7 @@ class LanguageModelSAERunnerConfigDict(TypedDict, total=False):
     hook_name: str
     hook_layer: int
     hook_head_index: Optional[int]
+    subtract_embeddings: bool
     dataset_path: str
     dataset_trust_remote_code: bool
     is_dataset_tokenized: bool
@@ -53,6 +54,7 @@ def build_sae_cfg(**kwargs: Any) -> LanguageModelSAERunnerConfig:
         "hook_name": "blocks.0.hook_mlp_out",
         "hook_layer": 0,
         "hook_head_index": None,
+        "subtract_embeddings": False,
         "dataset_path": TINYSTORIES_DATASET,
         "dataset_trust_remote_code": True,
         "is_dataset_tokenized": False,

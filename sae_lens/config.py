@@ -127,6 +127,7 @@ class LanguageModelSAERunnerConfig:
     hook_eval: str = "NOT_IN_USE"
     hook_layer: int = 0
     hook_head_index: Optional[int] = None
+    subtract_embeddings: bool = False
     dataset_path: str = ""
     dataset_trust_remote_code: bool = True
     streaming: bool = True
@@ -160,7 +161,9 @@ class LanguageModelSAERunnerConfig:
     training_tokens: int = 2_000_000
     finetuning_tokens: int = 0
     store_batch_size_prompts: int = 32
-    normalize_activations: str = "none"  # none, expected_average_only_in (Anthropic April Update), constant_norm_rescale (Anthropic Feb Update)
+    normalize_activations: str = (
+        "none"  # none, expected_average_only_in (Anthropic April Update), constant_norm_rescale (Anthropic Feb Update)
+    )
     seqpos_slice: tuple[int | None, ...] = (None,)
 
     # Misc
@@ -257,6 +260,7 @@ class LanguageModelSAERunnerConfig:
                 self.model_name,
                 self.hook_name,
                 self.hook_head_index,
+                self.subtract_embeddings,
             )
 
         if self.activation_fn is None:
@@ -422,6 +426,7 @@ class LanguageModelSAERunnerConfig:
             "hook_name": self.hook_name,
             "hook_layer": self.hook_layer,
             "hook_head_index": self.hook_head_index,
+            "subtract_embeddings": self.subtract_embeddings,
             "activation_fn_str": self.activation_fn,
             "apply_b_dec_to_input": self.apply_b_dec_to_input,
             "context_size": self.context_size,
@@ -529,6 +534,7 @@ class CacheActivationsRunnerConfig:
     hook_layer: int
     d_in: int
     training_tokens: int
+    subtract_embeddings: bool = False
 
     context_size: int = -1  # Required if dataset is not tokenized
     model_class_name: str = "HookedTransformer"
@@ -630,10 +636,13 @@ def _default_cached_activations_path(
     model_name: str,
     hook_name: str,
     hook_head_index: int | None,
+    subtract_embeddings: bool = False,
 ) -> str:
     path = f"activations/{dataset_path.replace('/', '_')}/{model_name.replace('/', '_')}/{hook_name}"
     if hook_head_index is not None:
         path += f"_{hook_head_index}"
+    if subtract_embeddings:
+        path += "_noembed"
     return path
 
 

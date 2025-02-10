@@ -54,6 +54,7 @@ class SAEConfig:
     hook_name: str
     hook_layer: int
     hook_head_index: Optional[int]
+    subtract_embeddings: bool
     prepend_bos: bool
     dataset_path: str
     dataset_trust_remote_code: bool
@@ -104,6 +105,7 @@ class SAEConfig:
             "hook_name": self.hook_name,
             "hook_layer": self.hook_layer,
             "hook_head_index": self.hook_head_index,
+            "subtract_embeddings": self.subtract_embeddings,
             "activation_fn_str": self.activation_fn_str,  # use string for serialization
             "activation_fn_kwargs": self.activation_fn_kwargs or {},
             "apply_b_dec_to_input": self.apply_b_dec_to_input,

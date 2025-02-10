@@ -18,6 +18,7 @@ from requests import HTTPError
 from safetensors.torch import save_file
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from transformer_lens.components import Embed
 from transformer_lens.hook_points import HookedRootModule
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 
@@ -47,6 +48,7 @@ class ActivationsStore:
     hook_name: str
     hook_layer: int
     hook_head_index: int | None
+    subtract_embeddings: bool = False
     _dataloader: Iterator[Any] | None = None
     _storage_buffer: torch.Tensor | None = None
     exclude_special_tokens: torch.Tensor | None = None
@@ -77,6 +79,7 @@ class ActivationsStore:
             # NOOP
             prepend_bos=False,
             hook_head_index=None,
+            subtract_embeddings=cfg.subtract_embeddings,
             dataset=cfg.dataset_path,
             streaming=False,
             model=model,
@@ -127,6 +130,7 @@ class ActivationsStore:
             hook_name=cfg.hook_name,
             hook_layer=cfg.hook_layer,
             hook_head_index=cfg.hook_head_index,
+            subtract_embeddings=cfg.subtract_embeddings,
             context_size=cfg.context_size,
             d_in=cfg.d_in,
             n_batches_in_buffer=cfg.n_batches_in_buffer,
@@ -166,6 +170,7 @@ class ActivationsStore:
             hook_name=sae.cfg.hook_name,
             hook_layer=sae.cfg.hook_layer,
             hook_head_index=sae.cfg.hook_head_index,
+            subtract_embeddings=sae.cfg.subtract_embeddings,
             context_size=sae.cfg.context_size if context_size is None else context_size,
             prepend_bos=sae.cfg.prepend_bos,
             streaming=streaming,
@@ -204,6 +209,7 @@ class ActivationsStore:
         dataset_trust_remote_code: bool | None = None,
         seqpos_slice: tuple[int | None, ...] = (None,),
         exclude_special_tokens: torch.Tensor | None = None,
+        subtract_embeddings: bool = False,
     ):
         self.model = model
         if model_kwargs is None:
@@ -232,6 +238,7 @@ class ActivationsStore:
         self.hook_name = hook_name
         self.hook_layer = hook_layer
         self.hook_head_index = hook_head_index
+        self.subtract_embeddings = subtract_embeddings
         self.context_size = context_size
         self.d_in = d_in
         self.n_batches_in_buffer = n_batches_in_buffer
@@ -519,6 +526,11 @@ class ActivationsStore:
         d_in may result from a concatenated head dimension.
         """
 
+        embeddings = None
+        if self.subtract_embeddings:
+            assert isinstance(self.model.embed, Embed), "model does not have `embed`"
+            embeddings = self.model.embed.forward(batch_tokens)
+
         # Setup autocast if using
         if self.autocast_lm:
             autocast_if_enabled = torch.autocast(
@@ -563,6 +575,9 @@ class ActivationsStore:
                 )
         else:
             stacked_activations[:, :, 0] = layerwise_activations
+
+        if self.subtract_embeddings and embeddings is not None:
+            stacked_activations -= embeddings.unsqueeze(2)  # add layer dim
 
         return stacked_activations
 

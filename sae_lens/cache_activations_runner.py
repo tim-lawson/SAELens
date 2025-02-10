@@ -35,6 +35,7 @@ def _mk_activations_store(
         hook_name=cfg.hook_name,
         hook_layer=cfg.hook_layer,
         hook_head_index=None,
+        subtract_embeddings=cfg.subtract_embeddings,
         context_size=cfg.context_size,
         d_in=cfg.d_in,
         n_batches_in_buffer=cfg.n_batches_in_buffer,
