@@ -577,6 +577,7 @@ class ActivationsStore:
             stacked_activations[:, :, 0] = layerwise_activations
 
         if self.subtract_embeddings and embeddings is not None:
+            embeddings = embeddings.to(stacked_activations.device)
             stacked_activations -= embeddings.unsqueeze(2)  # add layer dim
 
         return stacked_activations
